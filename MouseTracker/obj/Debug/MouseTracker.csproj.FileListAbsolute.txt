@@ -1,0 +1,14 @@
+C:\tool\MouseTracker\MouseTracker\bin\Debug\MouseTracker.exe.config
+C:\tool\MouseTracker\MouseTracker\bin\Debug\MouseTracker.exe.manifest
+C:\tool\MouseTracker\MouseTracker\bin\Debug\MouseTracker.application
+C:\tool\MouseTracker\MouseTracker\bin\Debug\MouseTracker.exe
+C:\tool\MouseTracker\MouseTracker\bin\Debug\MouseTracker.pdb
+C:\tool\MouseTracker\MouseTracker\obj\Debug\MouseTracker.csprojAssemblyReference.cache
+C:\tool\MouseTracker\MouseTracker\obj\Debug\MouseTracker.Form1.resources
+C:\tool\MouseTracker\MouseTracker\obj\Debug\MouseTracker.Properties.Resources.resources
+C:\tool\MouseTracker\MouseTracker\obj\Debug\MouseTracker.csproj.GenerateResource.cache
+C:\tool\MouseTracker\MouseTracker\obj\Debug\MouseTracker.csproj.CoreCompileInputs.cache
+C:\tool\MouseTracker\MouseTracker\obj\Debug\MouseTracker.exe.manifest
+C:\tool\MouseTracker\MouseTracker\obj\Debug\MouseTracker.application
+C:\tool\MouseTracker\MouseTracker\obj\Debug\MouseTracker.exe
+C:\tool\MouseTracker\MouseTracker\obj\Debug\MouseTracker.pdb

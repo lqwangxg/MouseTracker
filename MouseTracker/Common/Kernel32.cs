@@ -37,9 +37,9 @@ namespace Common
 	internal struct BY_HANDLE_FILE_INFORMATION
 	{
 		public UInt32 dwFileAttributes;
-		public FILETIME ftCreationTime;
-		public FILETIME ftLastAccessTime;
-		public FILETIME ftLastWriteTime;
+		public System.Runtime.InteropServices.ComTypes.FILETIME ftCreationTime;
+		public System.Runtime.InteropServices.ComTypes.FILETIME ftLastAccessTime;
+		public System.Runtime.InteropServices.ComTypes.FILETIME ftLastWriteTime;
 		public UInt32 dwVolumeSerialNumber;
 		public UInt32 nFileSizeHigh;
 		public UInt32 nFileSizeLow;

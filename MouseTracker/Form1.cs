@@ -12,16 +12,13 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-using Microsoft.Win32;
 using System.Runtime.InteropServices;
-using System.Security.Permissions;
-using System.Reflection;
-using System.Globalization;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
 
 using Common;
+using System.Collections;
 
 namespace MouseTracker
 {
@@ -66,12 +63,13 @@ namespace MouseTracker
         {
             InitializeComponent();
             tool = new Tool();
-
+            
             windows = new Dictionary<IntPtr, Window>();
             CleanData_Click(null, null);
             dataGridView2.Rows.Add(15);
             ShowDataGridView2.Available = false;
-
+            this.Action.Items.Clear();
+            this.Action.Items.AddRange(Enum.GetNames(typeof(MouseMessages))); 
             MouseHookProc = new HookProc(Mouse_HookCallback);
             KeyboardHookProc = new HookProc(KeyBoard_HookCallback);
             SetHook(WH_KEYBOARD_LL);
@@ -122,7 +120,7 @@ namespace MouseTracker
         /// <param name="wParam"></param>
         /// <param name="lParam"></param>
         /// <returns></returns>
-        public IntPtr KeyBoard_HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        private IntPtr KeyBoard_HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
             {
@@ -172,7 +170,7 @@ namespace MouseTracker
         /// <param name="wParam"></param>
         /// <param name="lParam"></param>
         /// <returns></returns>
-        public IntPtr Mouse_HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        private IntPtr Mouse_HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             try
             {
@@ -234,7 +232,7 @@ namespace MouseTracker
         /// <summary>
         /// Resume all the suspended windows
         /// </summary>
-        void ResumeWindows()
+        private void ResumeWindows()
         {
             foreach (IntPtr hWnd in suspendHWnds)
             {
@@ -246,6 +244,11 @@ namespace MouseTracker
             suspendHWnds.Clear();
         }
 
+        /// <summary>
+        /// Do Dispose Job Before Form Closed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             try { User32.UnhookWindowsHookEx(mouseHookID); }
@@ -256,6 +259,11 @@ namespace MouseTracker
             ResumeWindows();
         }
 
+        /// <summary>
+        /// Start Event Tracking.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void StartTracking_Click(object sender, EventArgs e)
         {
             if (index >= dataGridView1.Rows.Count)
@@ -281,6 +289,11 @@ namespace MouseTracker
             refTimeMs = DateTime.Now.Millisecond;
         }
 
+        /// <summary>
+        /// Stop Event Tracking.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public void StopTracking_Click(object sender, EventArgs e)
         {
             if (mouseHookID != IntPtr.Zero) User32.UnhookWindowsHookEx(mouseHookID);
@@ -294,14 +307,17 @@ namespace MouseTracker
 
             if (MouseActionProcess.lastWin != null)
             {
-                System.Windows.Forms.ControlPaint.DrawReversibleFrame(
-                    new System.Drawing.Rectangle(MouseActionProcess.lastWin.rect.X, MouseActionProcess.lastWin.rect.Y, MouseActionProcess.lastWin.rect.Width, MouseActionProcess.lastWin.rect.Height),
-                    System.Drawing.Color.Black,
-                    System.Windows.Forms.FrameStyle.Thick);
+                ControlPaint.DrawReversibleFrame(((Window)MouseActionProcess.lastWin).frame,
+                    Color.Black, FrameStyle.Thick);
                 MouseActionProcess.lastWin = null;
             }
         }
 
+        /// <summary>
+        /// Clear All Data Tracked.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void CleanData_Click(object sender, EventArgs e)
         {
             StopTracking_Click(null, null);
@@ -313,16 +329,27 @@ namespace MouseTracker
 
             dataGridView2.Rows.Clear();
         }
-
+        /// <summary>
+        /// Insert a new Event Data Row
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void InsertRow_Click(object sender, EventArgs e)
         {
             if (mouseHookID != IntPtr.Zero) SetHook(WH_MOUSE_LL);
 
             if (StopTracking.Enabled) return;
+
             dataGridView1.Rows.Insert(dataGridView1.CurrentRow.Index, 1);
             if (dataGridView1.CurrentRow.Index <= index + 1) index++;
+
         }
 
+        /// <summary>
+        /// Delete the selected Event data rows.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void RemoveRows_Click(object sender, EventArgs e)
         {
             if (mouseHookID != IntPtr.Zero) SetHook(WH_MOUSE_LL);
@@ -524,41 +551,55 @@ namespace MouseTracker
         /// <param name="e"></param>
         private void Simulate_Click(object sender, EventArgs e)
         {
-            //object rows = (dataGridView1.SelectedRows.Count > 0) ?  dataGridView1.SelectedRows : dataGridView1.Rows;
-            POINT point;
-            point.x = point.y = 0;
+            ICollection rows; // = (dataGridView1.SelectedRows.Count > 0) ? dataGridView1.SelectedRows : dataGridView1.Rows;
+            if(dataGridView1.SelectedRows.Count > 0)
+            {
+                rows = dataGridView1.SelectedRows;
+            }
+            else
+            {
+                rows = dataGridView1.Rows;
+            }
+
+            //POINT point;
+            //point.x = point.y = 0;
             IntPtr hWnd = IntPtr.Zero;
-            foreach (DataGridViewRow row in dataGridView1.Rows)
+            foreach (DataGridViewRow row in rows)
             {
                 Thread.Sleep(40);
                 try
                 {
+                    MacroEventArgs me = (MacroEventArgs)row.DataBoundItem;
+                    
                     int x = int.Parse(row.Cells[1].Value.ToString());
                     int y = int.Parse(row.Cells[2].Value.ToString());
-                    point.x = x;
-                    point.y = y;
+                    //point.x = x;
+                    //point.y = y;
                     hWnd = windows[(IntPtr)int.Parse(row.Cells[3].Value.ToString())].owner;
 
+                    //Enum.GetName(typeof(MouseMessages), MouseMessages.WM_MOUSEMOVE)
+                    MouseMessages mm;
+                    Enum.TryParse<MouseMessages>(row.Cells[0].Value.ToString(), out mm);
                     MouseEventFlags flag = MouseEventFlags.MOVE;
-                    switch (row.Cells[0].Value.ToString())
+                    switch (mm)
                     {
-                        case "Move":
+                        case MouseMessages.WM_MOUSEMOVE:
                             User32.SetCursorPos(x, y);
                             continue;
 
-                        case "Left Button Down":
+                        case MouseMessages.WM_LBUTTONDOWN:
                             flag = MouseEventFlags.LEFTDOWN;
                             break;
 
-                        case "Right Button Down":
+                        case MouseMessages.WM_RBUTTONDOWN:
                             flag = MouseEventFlags.RIGHTDOWN;
                             break;
 
-                        case "Left Button Up":
+                        case MouseMessages.WM_LBUTTONUP:
                             flag = MouseEventFlags.LEFTUP;
                             break;
 
-                        case "Right Button Up":
+                        case MouseMessages.WM_RBUTTONUP:
                             flag = MouseEventFlags.RIGHTUP;
                             break;
                     }
@@ -694,114 +735,5 @@ namespace MouseTracker
 
     }
 
-    public class MouseActionEventArgs : EventArgs
-    {
-        public MouseMessages mouseMessage;
-        public readonly POINT point;
-        public readonly IntPtr hWnd;
 
-        public MouseActionEventArgs(MouseMessages mouseMessage, POINT point, IntPtr hWnd)
-        {
-            this.mouseMessage = mouseMessage;
-            this.point = point;
-            this.hWnd = hWnd;
-        }
-    }
-
-    public class MouseActionProcess
-    {
-        public static Window lastWin;
-
-        void drawFrame(object win)
-        {
-            if (Thread.CurrentThread.Name != null) Thread.Sleep(200);
-
-            System.Windows.Forms.ControlPaint.DrawReversibleFrame(
-                new System.Drawing.Rectangle(((Window)win).rect.X, ((Window)win).rect.Y, ((Window)win).rect.Width, ((Window)win).rect.Height),
-                System.Drawing.Color.Red,
-                System.Windows.Forms.FrameStyle.Thick);
-        }
-
-        // Local mouse action event handler
-        public void MouseAction(object sender, MouseActionEventArgs e)
-        {
-            Form1 form = (Form1)sender;
-            DataGridViewRowCollection rows = form.dataGridView1.Rows;
-
-            rows[form.index].Cells[1].Value = e.point.x;
-            rows[form.index].Cells[2].Value = e.point.y;
-
-            switch (e.mouseMessage)
-            {
-                case MouseMessages.WM_MOUSEMOVE:
-                    if (form.isNewRow)
-                    {
-                        rows[form.index].Cells[0].Value = "Move";
-                        form.isNewRow = false;
-                    }
-
-                    // Exits the global low level mouse hook, calls GC.Collect() actively, and then reenters a new hook            
-                    form.SetHook(Form1.WH_MOUSE_LL);
-                    return;
-
-                case MouseMessages.WM_LBUTTONDOWN:
-                    rows[form.index].Cells[0].Value = "Left Button Down";
-                    break;
-
-                case MouseMessages.WM_RBUTTONDOWN:
-                    rows[form.index].Cells[0].Value = "Right Button Down";
-                    break;
-
-                case MouseMessages.WM_LBUTTONUP:
-                    rows[form.index].Cells[0].Value = "Left Button Up";
-                    break;
-
-                case MouseMessages.WM_RBUTTONUP:
-                    rows[form.index].Cells[0].Value = "Right Button Up";
-                    break;
-            }
-
-            Window win = new Tool().getWindow(e.hWnd, e.point);
-            if (win != null)
-            {
-                //high light window's fame
-                switch (e.mouseMessage)
-                {
-                    case MouseMessages.WM_LBUTTONDOWN:
-                    case MouseMessages.WM_RBUTTONDOWN:
-                        drawFrame(win);
-                        lastWin = win;
-                        break;
-
-                    case MouseMessages.WM_LBUTTONUP:
-                    case MouseMessages.WM_RBUTTONUP:
-                        drawFrame(lastWin);
-
-                        if (lastWin.hWnd != win.hWnd)
-                        {
-                            drawFrame(win);
-                            Thread thd = new Thread(drawFrame);
-                            thd.Name = "delay";
-                            thd.Start(win);
-                        }
-                        lastWin = null;
-
-                        break;
-                }
-
-                // Exits the global low level mouse hook, calls GC.Collect() actively, and then reenters a new hook
-                form.SetHook(Form1.WH_MOUSE_LL);
-
-                if (!form.windows.ContainsKey(win.hWnd)) form.windows.Add(win.hWnd, win);
-                rows[form.index].Cells[3].Value = win.hWnd.ToString();
-
-                form.dataGridView1.ClearSelection();
-                rows[form.index++].Cells[3].Selected = true;
-                form.isNewRow = true;
-                if (form.index >= form.dataGridView1.Rows.Count) form.StopTracking_Click(null, null);
-
-                if (!form.splitContainer1.Panel2Collapsed) form.showWindowProperties(win.hWnd);
-            }
-        }
-    }
 }
